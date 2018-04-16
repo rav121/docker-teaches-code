@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>ACE in Action</title>
+<title>Docker Teaches Code</title>
 <style type="text/css" media="screen">
     #toolbar {
         border: 1px solid lightgray;
@@ -40,7 +40,7 @@
 }</div>
 <div>
     <label id="output">
-        At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies. 
+        
     </label>
 </div>
 <script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
@@ -50,7 +50,7 @@
     editor.session.setMode("ace/mode/javascript");
     var refs = {};
     function run() {
-        console.log(editor.getValue())
+        document.getElementById("output").textContent = editor.getValue()
     }
     editor.commands.addCommand({
         name: "Run",
