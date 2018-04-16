@@ -9,6 +9,7 @@ import (
 
 func main() {
 	fmt.Println("Starting backend server on port 8080")
+	http.Handle("/", http.FileServer(http.Dir("html")))
 	http.HandleFunc("/run", runHandler)
 	if err := http.ListenAndServe("localhost:8080", nil); err != nil {
 		fmt.Println(err)
