@@ -50,7 +50,17 @@
     editor.session.setMode("ace/mode/javascript");
     var refs = {};
     function run() {
-        document.getElementById("output").textContent = editor.getValue()
+        var url = "http://localhost:8080/run";
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById("output").textContent = xhr.responseText
+            } else{
+                document.getElementById("output").textContent = "Error!!!!" + xhr.responseText
+            }
+        };
+        xhr.send(editor.getValue());
     }
     editor.commands.addCommand({
         name: "Run",
