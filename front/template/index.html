@@ -58,7 +58,10 @@
                 }
             }
         };
-        xhr.send(editor.getValue());
+        xhr.send(JSON.stringify({
+            lang: "golang",
+            code: editor.getValue()
+        }));
     }
     editor.commands.addCommand({
         name: "Run",
