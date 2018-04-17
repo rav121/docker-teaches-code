@@ -22,6 +22,7 @@ func main() {
 	fmt.Println("Starting backend server on port 8080")
 	http.Handle("/static/", http.FileServer(http.Dir("front")))
 	http.HandleFunc("/run/", runHandler)
+	http.HandleFunc("/sample/", sampleHandler)
 	http.HandleFunc("/", serveTemplate)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println(err)
@@ -30,7 +31,8 @@ func main() {
 }
 
 type lang struct {
-	Name    string `json:",omitempty"`
+	Id      string `json:",omitempty"`
+	Name    string
 	File    string
 	Content string
 }
@@ -46,7 +48,7 @@ func parseLanguages() error {
 			return nil
 		}
 		if info.IsDir() {
-			l := lang{Name: filepath.Base(path)}
+			l := lang{Id: filepath.Base(path)}
 			data, err := ioutil.ReadFile(filepath.Join(path, "config.json"))
 			if err != nil {
 				return err
@@ -70,8 +72,15 @@ func parseLanguages() error {
 	return err
 }
 
+type language struct {
+	Name string
+	Id   string
+}
+
 type sample struct {
-	Content string
+	DefaultId string
+	Content   string
+	Languages []language
 }
 
 func serveTemplate(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +91,14 @@ func serveTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	t := template.Must(template.New("sample").Parse(string(content)))
 	w.WriteHeader(http.StatusOK)
-	err = t.Execute(w, languages[0])
+	s := sample{
+		Content:   languages[0].Content,
+		DefaultId: languages[0].Id,
+	}
+	for _, l := range languages {
+		s.Languages = append(s.Languages, language{Name: l.Name, Id: l.Id})
+	}
+	err = t.Execute(w, s)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -121,7 +137,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 
 func findLanguage(language string) (lang, error) {
 	for _, l := range languages {
-		if l.Name == language {
+		if l.Id == language {
 			return l, nil
 		}
 	}
@@ -147,4 +163,15 @@ func build(req request) (string, error) {
 	cmd.Stdout = &output
 	cmd.Run()
 	return output.String(), nil
+}
+
+func sampleHandler(w http.ResponseWriter, r *http.Request) {
+	l, err := findLanguage(r.FormValue("lang"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, l.Content)
 }

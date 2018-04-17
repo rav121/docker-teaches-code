@@ -10,3 +10,6 @@ services:
   golang:
     build: lang/golang
     image: dtc-golang
+  python:
+    build: lang/python
+    image: dtc-python

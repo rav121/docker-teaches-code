@@ -43,36 +43,54 @@
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
-    editor.session.setMode("ace/mode/golang");
+    editor.session.setMode("ace/mode/"+{{.DefaultId}})
     var refs = {};
     function run() {
+        var lang = document.getElementById("languages").value;
         var url = "http://localhost:8080/run/";
         var xhr = new XMLHttpRequest();
         xhr.open("POST", url, true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 ) {
                 if ( xhr.status === 200) {
-                    document.getElementById("output").textContent = xhr.responseText
+                    document.getElementById("output").textContent = xhr.responseText;
                 } else {
-                    document.getElementById("output").textContent = "Error: " + xhr.responseText
+                    document.getElementById("output").textContent = "Error: " + xhr.responseText;
                 }
             }
         };
         xhr.send(JSON.stringify({
-            lang: "golang",
+            lang: lang,
             code: editor.getValue()
         }));
     }
-    editor.commands.addCommand({
-        name: "Run",
-        exec: run
-    });
-    
+    function change() {
+        var lang = document.getElementById("languages").value;
+        var url = "http://localhost:8080/sample/?lang="+lang;
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 ) {
+                if ( xhr.status === 200) {
+                    editor.session.setValue(xhr.responseText);
+                    editor.session.setMode("ace/mode/"+lang)
+                } else {
+                    document.getElementById("output").textContent = "Error: " + xhr.responseText;
+                }
+            }
+        };
+        xhr.send();
+    }
     buildDom(["div", { class: "toolbar" },
-        ["button", {
-            ref: "runButton",
-            onclick: run
-        }, "Run"],
+        ["button", { onclick: run }, "Run"],
+        ["select", {
+                id: "languages",
+                onchange: change
+            },
+        {{range .Languages}}
+            ["option", { value: "{{.Id}}" }, "{{.Name}}" ],
+        {{end}}
+        ]
     ], document.body, refs);
     document.body.appendChild(editor.container)
     
