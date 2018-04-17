@@ -3,7 +3,7 @@ COPY *.go .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /backend
 
 FROM docker:dind
-COPY html html
+COPY front front
 COPY --from=gobuilder /backend /
 
 EXPOSE 8080

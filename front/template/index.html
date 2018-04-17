@@ -34,33 +34,28 @@
 </head>
 <body>
 
-<div id="editor">package main
-
-import "fmt"
-
-func main() {
-    fmt.Println("Hello Kid!")
-}</div>
+<div id="editor">{{.Content}}</div>
 <div>
     <label id="output">
-        
     </label>
 </div>
-<script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="static/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.session.setMode("ace/mode/golang");
     var refs = {};
     function run() {
-        var url = "http://localhost:8080/run";
+        var url = "http://localhost:8080/run/";
         var xhr = new XMLHttpRequest();
         xhr.open("POST", url, true);
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                document.getElementById("output").textContent = xhr.responseText
-            } else{
-                document.getElementById("output").textContent = "Error: " + xhr.responseText
+            if (xhr.readyState === 4 ) {
+                if ( xhr.status === 200) {
+                    document.getElementById("output").textContent = xhr.responseText
+                } else {
+                    document.getElementById("output").textContent = "Error: " + xhr.responseText
+                }
             }
         };
         xhr.send(editor.getValue());
