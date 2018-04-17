@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -20,21 +19,27 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("Starting backend server on port 8080")
-	http.Handle("/static/", http.FileServer(http.Dir("front")))
+	http.Handle("/", http.FileServer(http.Dir("front")))
 	http.HandleFunc("/run/", runHandler)
 	http.HandleFunc("/sample/", sampleHandler)
-	http.HandleFunc("/", serveTemplate)
+	http.HandleFunc("/languages/", languagesHandler)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
+type sample struct {
+	Name string `json:"name"`
+	File string `json:"file"`
+}
+
 type lang struct {
-	Id      string `json:",omitempty"`
-	Name    string
-	File    string
-	Content string
+	Id      string   `json:"id,omitempty"`
+	Name    string   `json:"name"`
+	File    string   `json:"file"`
+	Samples []sample `json:"samples"`
+	path    string
 }
 
 var languages = []lang{}
@@ -48,7 +53,10 @@ func parseLanguages() error {
 			return nil
 		}
 		if info.IsDir() {
-			l := lang{Id: filepath.Base(path)}
+			l := lang{
+				Id:   filepath.Base(path),
+				path: path,
+			}
 			data, err := ioutil.ReadFile(filepath.Join(path, "config.json"))
 			if err != nil {
 				return err
@@ -57,11 +65,6 @@ func parseLanguages() error {
 			if err != nil {
 				return err
 			}
-			content, err := ioutil.ReadFile(filepath.Join(path, "sample"))
-			if err != nil {
-				return err
-			}
-			l.Content = string(content)
 			languages = append(languages, l)
 		}
 		return filepath.SkipDir
@@ -77,32 +80,16 @@ type language struct {
 	Id   string
 }
 
-type sample struct {
+type templateConfig struct {
 	DefaultId string
-	Content   string
-	Languages []language
 }
 
-func serveTemplate(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile("front/template/index.html")
+func loadSample(file, path string) (string, error) {
+	content, err := ioutil.ReadFile(filepath.Join(path, file))
 	if err != nil {
-		fmt.Println(err)
-		return
+		return "", err
 	}
-	t := template.Must(template.New("sample").Parse(string(content)))
-	w.WriteHeader(http.StatusOK)
-	s := sample{
-		Content:   languages[0].Content,
-		DefaultId: languages[0].Id,
-	}
-	for _, l := range languages {
-		s.Languages = append(s.Languages, language{Name: l.Name, Id: l.Id})
-	}
-	err = t.Execute(w, s)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	return string(content), nil
 }
 
 type request struct {
@@ -172,6 +159,24 @@ func sampleHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, err)
 		return
 	}
+
+	content, err := loadSample(r.FormValue("file"), l.path)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, l.Content)
+	fmt.Fprint(w, content)
+}
+
+func languagesHandler(w http.ResponseWriter, r *http.Request) {
+	buf, err := json.Marshal(languages)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, string(buf))
 }

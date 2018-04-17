@@ -1,4 +1,14 @@
 {
     "file": "main.go",
-    "name": "Go"
+    "name": "Go",
+    "samples": [
+        { 
+            "name": "Hello World",
+            "file": "hello_world.go"
+        },
+        {
+            "name": "Fibonacci",
+            "file": "fibonacci.go"
+        }
+    ]
 }

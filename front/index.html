@@ -34,17 +34,17 @@
 </head>
 <body>
 
-<div id="editor">{{.Content}}</div>
+<div id="editor"></div>
 <div>
-    <label id="output">
-    </label>
+    <label id="output"></label>
 </div>
-<script src="static/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
-    editor.session.setMode("ace/mode/"+{{.DefaultId}})
+    var languages
     var refs = {};
+
     function run() {
         var lang = document.getElementById("languages").value;
         var url = window.location.href + "run/";
@@ -64,16 +64,33 @@
             code: editor.getValue()
         }));
     }
-    function change() {
+    function changeLanguage() {
         var lang = document.getElementById("languages").value;
-        var url = window.location.href + "sample/?lang="+lang;
+        editor.session.setMode("ace/mode/"+lang)
+        for (let l of languages) {
+            if (l.id == lang){
+                var samples = document.getElementById("samples");
+                while (samples.firstChild) {
+                    samples.removeChild(samples.firstChild);
+                }
+                for (let s of l.samples) {
+                    buildDom(["option", { value: s.file }, s.name ], samples, refs)
+                }
+                samples.onchange()
+                return
+            }
+        }
+    }
+    function changeSample() {
+        var lang = document.getElementById("languages").value;
+        var sample = document.getElementById("samples").value;
+        var url = window.location.href + "sample/?lang="+lang+"&file="+sample;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 ) {
                 if ( xhr.status === 200) {
                     editor.session.setValue(xhr.responseText);
-                    editor.session.setMode("ace/mode/"+lang)
                 } else {
                     document.getElementById("output").textContent = "Error: " + xhr.responseText;
                 }
@@ -85,15 +102,39 @@
         ["button", { onclick: run }, "Run"],
         ["select", {
                 id: "languages",
-                onchange: change
+                onchange: changeLanguage
             },
-        {{range .Languages}}
-            ["option", { value: "{{.Id}}" }, "{{.Name}}" ],
-        {{end}}
-        ]
+        ],
+        ["select", {
+                id: "samples",
+                onchange: changeSample
+            },
+        ],
     ], document.body, refs);
+
     document.body.appendChild(editor.container)
-    
+
+    function load(){
+        var url = window.location.href + "languages/";
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 ) {
+                if ( xhr.status === 200) {
+                    var lang = document.getElementById("languages");
+                    languages = JSON.parse(xhr.responseText)
+                    for (let l of languages) {
+                        buildDom(["option", { value: l.id }, l.name ], lang, refs)
+                    }
+                    lang.onchange()
+                } else {
+                    document.getElementById("output").textContent = "Error: " + xhr.responseText;
+                }
+            }
+        };
+        xhr.send();
+    }
+    load();    
     window.editor = editor;
 
 function buildDom(arr, parent, refs) {

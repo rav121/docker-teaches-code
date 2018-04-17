@@ -1,4 +1,14 @@
 {
     "file": "main.py",
-    "name": "python"
+    "name": "Python",
+    "samples": [
+        { 
+            "name": "Hello World",
+            "file": "hello_world.py"
+        },
+        {
+            "name": "Fibonacci",
+            "file": "fibonacci.py"
+        }
+    ]
 }
