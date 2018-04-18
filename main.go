@@ -35,7 +35,7 @@ type sample struct {
 }
 
 type lang struct {
-	Id      string   `json:"id,omitempty"`
+	ID      string   `json:"id,omitempty"`
 	Name    string   `json:"name"`
 	File    string   `json:"file"`
 	Samples []sample `json:"samples"`
@@ -45,21 +45,22 @@ type lang struct {
 var languages = []lang{}
 
 func parseLanguages() error {
-	err := filepath.Walk("lang", func(path string, info os.FileInfo, err error) error {
+	root := "lang"
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if path == "lang" {
+		if path == root {
 			return nil
 		}
 		if info.IsDir() {
-			l := lang{
-				Id:   filepath.Base(path),
-				path: path,
-			}
 			data, err := ioutil.ReadFile(filepath.Join(path, "config.json"))
 			if err != nil {
 				return err
+			}
+			l := lang{
+				ID:   filepath.Base(path),
+				path: path,
 			}
 			err = json.Unmarshal(data, &l)
 			if err != nil {
@@ -73,15 +74,6 @@ func parseLanguages() error {
 		return languages[i].Name < languages[j].Name
 	})
 	return err
-}
-
-type language struct {
-	Name string
-	Id   string
-}
-
-type templateConfig struct {
-	DefaultId string
 }
 
 func loadSample(file, path string) (string, error) {
@@ -112,7 +104,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, err)
 		return
 	}
-	s, err := build(req)
+	s, err := runCode(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -124,14 +116,14 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 
 func findLanguage(language string) (lang, error) {
 	for _, l := range languages {
-		if l.Id == language {
+		if l.ID == language {
 			return l, nil
 		}
 	}
 	return lang{}, fmt.Errorf("invalid language '%s'", language)
 }
 
-func build(req request) (string, error) {
+func runCode(req request) (string, error) {
 	lang, err := findLanguage(req.Lang)
 	if err != nil {
 		return "", err
@@ -159,7 +151,6 @@ func sampleHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, err)
 		return
 	}
-
 	content, err := loadSample(r.FormValue("file"), l.path)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
