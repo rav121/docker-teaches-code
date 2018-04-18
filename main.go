@@ -37,6 +37,7 @@ type sample struct {
 type lang struct {
 	ID      string   `json:"id,omitempty"`
 	Name    string   `json:"name"`
+	Mode    string   `json:"mode"`
 	File    string   `json:"file"`
 	Samples []sample `json:"samples"`
 	path    string
@@ -65,6 +66,9 @@ func parseLanguages() error {
 			err = json.Unmarshal(data, &l)
 			if err != nil {
 				return err
+			}
+			if l.Mode == "" {
+				l.Mode = l.ID
 			}
 			languages = append(languages, l)
 		}

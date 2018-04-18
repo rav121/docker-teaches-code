@@ -66,9 +66,9 @@
     }
     function changeLanguage() {
         var lang = document.getElementById("languages").value;
-        editor.session.setMode("ace/mode/"+lang)
         for (let l of languages) {
             if (l.id == lang){
+                editor.session.setMode("ace/mode/"+l.mode)
                 var samples = document.getElementById("samples");
                 while (samples.firstChild) {
                     samples.removeChild(samples.firstChild);
