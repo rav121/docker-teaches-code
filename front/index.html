@@ -3,39 +3,54 @@
 <head>
 <title>Docker Teaches Code</title>
 <style type="text/css" media="screen">
+    body, html {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+    }
+    #container {
+        width: 100%;
+        height: 100%;
+    }
     #toolbar {
-        border: 1px solid lightgray;
-        margin: auto;
         position: absolute;
-        top: 0;
+        top: 8px;
+        bottom: 0;
+        left: 8px;
         right: 0;
-        bottom: 50px;
-        left: 0;
-        width: 80%;
         height: 38px;
     }
     #editor { 
         position: absolute;
         top: 38px;
-        right: 0;
-        bottom: 30%;
         left: 0;
+        right: 0;
+        bottom: 200px;
     }
     #output {
         position: absolute;
-        top: 70%;
+        left: 0;
         right: 0;
         bottom: 0;
+        height: 200px;
+    }
+    #drag {
+        position: absolute;
+        top: -4px;
         left: 0;
-        width: 100%;
-        height: 30%;
+        right: 0;
+        height: 8px;
+        cursor: ns-resize;
     }
 </style>
 </head>
 <body>
 
-<div id="editor"></div>
-<div id="output"></div>
+    <div id="container">
+        <div id="toolbar"></div>
+        <div id="editor"></div>
+        <div id="output"></div>
+    </div>
 
 <script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
@@ -106,23 +121,21 @@
         xhr.send();
         output.setValue("")
     }
-    buildDom(["div", { class: "toolbar" },
-        ["button", { onclick: run }, "Run"],
-        ["select", {
+    var toolbar = document.getElementById("toolbar");
+    buildDom(["button", { onclick: run }, "Run"], toolbar, refs);
+    buildDom(["select", {
                 id: "languages",
                 onchange: changeLanguage
             },
-        ],
-        ["select", {
+        ], toolbar, refs);
+    buildDom(["select", {
                 id: "samples",
                 onchange: changeSample
             },
-        ],
-    ], document.body, refs);
+        ], toolbar, refs);
+    buildDom(["div", { id: "drag" }], document.getElementById("output"), refs);
 
-    document.body.appendChild(editor.container)
-
-    function load(){
+    (function(){
         var url = window.location.href + "languages/";
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
@@ -141,8 +154,7 @@
             }
         };
         xhr.send();
-    }
-    load();    
+    })();
 
 function buildDom(arr, parent, refs) {
     if (typeof arr == "string" && arr) {
@@ -187,6 +199,33 @@ function buildDom(arr, parent, refs) {
         parent.appendChild(el);
     return el;
 };
+
+    (function() {
+        var container = document.getElementById("container"),
+            top = document.getElementById("editor"),
+            bottom = document.getElementById("output"),
+            drag = document.getElementById("drag");
+        var isResizing = false;
+
+        drag.onmousedown = function(e) {
+            isResizing = true;
+        };
+
+        document.onmouseup = function(e) {
+            isResizing = false;
+        }
+
+        document.onmousemove = function(e) {
+            if (isResizing) {
+                var offset = container.clientHeight - container.offsetTop - e.clientY;
+                offset = Math.min( Math.max( offset, 200 ), container.clientHeight - 200 )
+                top.style.bottom = offset + "px";
+                bottom.style.height = offset + "px";
+                editor.resize()
+                output.resize()
+            }
+        }
+    })();
 
 </script>
 </body>
