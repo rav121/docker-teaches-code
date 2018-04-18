@@ -35,9 +35,8 @@
 <body>
 
 <div id="editor"></div>
-<div>
-    <label id="output"></label>
-</div>
+<pre id="output" class="code" ace-mode="ace/mode/javascript" ace-theme="ace/theme/twilight"></pre>
+
 <script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor = ace.edit("editor");
@@ -135,7 +134,6 @@
         xhr.send();
     }
     load();    
-    window.editor = editor;
 
 function buildDom(arr, parent, refs) {
     if (typeof arr == "string" && arr) {
