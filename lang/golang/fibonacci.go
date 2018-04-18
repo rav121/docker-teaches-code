@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-func FibonacciLoop(n int) int {
+func fibonacci(n int) int {
 	f := make([]int, n+1, n+2)
 	if n < 2 {
 		f = f[0:2]
@@ -18,20 +18,8 @@ func FibonacciLoop(n int) int {
 	return f[n]
 }
 
-func FibonacciRecursion(n int) int {
-	if n <= 1 {
-		return n
-	}
-	return FibonacciRecursion(n-1) + FibonacciRecursion(n-2)
-}
-
 func main() {
 	for i := 0; i <= 9; i++ {
-		fmt.Print(strconv.Itoa(FibonacciLoop(i)) + " ")
+		fmt.Print(strconv.Itoa(fibonacci(i)) + " ")
 	}
-	fmt.Println("")
-	for i := 0; i <= 9; i++ {
-		fmt.Print(strconv.Itoa(FibonacciRecursion(i)) + " ")
-	}
-	fmt.Println("")
 }
