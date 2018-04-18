@@ -57,10 +57,11 @@
         xhr.open("POST", url, true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 ) {
-                if ( xhr.status === 200) {
-                    document.getElementById("output").textContent = xhr.responseText;
+                if (xhr.status === 200) {
+                    output.setValue(xhr.responseText);
+                    output.gotoLine(output.session.getLength());
                 } else {
-                    document.getElementById("output").textContent = "Error: " + xhr.responseText;
+                    output.setValue("Error: " + xhr.responseText);
                 }
             }
         };
@@ -68,6 +69,7 @@
             lang: lang,
             code: editor.getValue()
         }));
+        output.setValue("")
     }
     function changeLanguage() {
         var lang = document.getElementById("languages").value;
@@ -95,13 +97,14 @@
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 ) {
                 if ( xhr.status === 200) {
-                    editor.session.setValue(xhr.responseText);
+                    editor.setValue(xhr.responseText);
                 } else {
-                    document.getElementById("output").textContent = "Error: " + xhr.responseText;
+                    output.setValue("Error: " + xhr.responseText);
                 }
             }
         };
         xhr.send();
+        output.setValue("")
     }
     buildDom(["div", { class: "toolbar" },
         ["button", { onclick: run }, "Run"],
