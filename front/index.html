@@ -35,12 +35,18 @@
 <body>
 
 <div id="editor"></div>
-<pre id="output" class="code" ace-mode="ace/mode/javascript" ace-theme="ace/theme/twilight"></pre>
+<div id="output"></div>
 
 <script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
+    var output = ace.edit("output");
+    output.setOptions({
+        "autoScrollEditorIntoView": false,
+        "readOnly": true,
+        "showPrintMargin": false,
+    });
     var languages
     var refs = {};
 
