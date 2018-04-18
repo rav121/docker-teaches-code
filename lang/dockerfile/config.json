@@ -5,6 +5,14 @@
         { 
             "name": "Hello World",
             "file": "hello_world.Dockerfile"
+        },
+        {
+            "name": "Whale Say",
+            "file": "whale_say.Dockerfile"
+        },
+        {
+            "name": "Curl",
+            "file": "curl.Dockerfile"
         }
     ]
 }
