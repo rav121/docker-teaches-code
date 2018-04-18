@@ -136,11 +136,12 @@ func runCode(req request) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer os.RemoveAll(dir)
 	err = ioutil.WriteFile(filepath.Join(dir, lang.File), []byte(req.Code), 0666)
 	if err != nil {
 		return "", err
 	}
-	cmd := exec.Command("docker", "run", "--rm", "-v", dir+":/dtc", "dtc-"+req.Lang)
+	cmd := exec.Command("docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v", dir+":/dtc", "dtc-"+req.Lang)
 	output := bytes.Buffer{}
 	cmd.Stderr = &output
 	cmd.Stdout = &output

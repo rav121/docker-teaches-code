@@ -1,0 +1,10 @@
+{
+    "file": "Dockerfile",
+    "name": "Docker",
+    "samples": [
+        { 
+            "name": "Hello World",
+            "file": "hello_world.Dockerfile"
+        }
+    ]
+}

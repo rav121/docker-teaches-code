@@ -10,6 +10,9 @@ services:
   cpp:
     build: lang/cpp
     image: dtc-cpp
+  dockerfile:
+    build: lang/dockerfile
+    image: dtc-dockerfile
   golang:
     build: lang/golang
     image: dtc-golang
