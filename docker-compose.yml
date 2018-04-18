@@ -7,6 +7,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/dtc:/tmp/dtc
+  cpp:
+    build: lang/cpp
+    image: dtc-cpp
   golang:
     build: lang/golang
     image: dtc-golang

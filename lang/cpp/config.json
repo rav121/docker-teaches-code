@@ -1,0 +1,11 @@
+{
+    "file": "main.cpp",
+    "mode": "c_cpp",
+    "name": "C++",
+    "samples": [
+        {
+            "name": "Hello World",
+            "file": "hello_world.cpp"
+        }
+    ]
+}
