@@ -5,7 +5,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /backend
 
 FROM docker:dind
 COPY front front
-COPY lang lang
+COPY envs envs
 COPY --from=gobuilder /backend /
 
 EXPOSE 8080

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html env="en">
 <head>
 <title>Docker Teaches Code</title>
 <style type="text/css" media="screen">
@@ -62,7 +62,7 @@
         "readOnly": true,
         "showPrintMargin": false,
     });
-    var languages;
+    var envs;
     var refs = {};
 
     function run() {
@@ -76,14 +76,14 @@
         uri += loc.pathname + "run/";
         var socket = new WebSocket(uri);
         socket.onmessage = function (e) {
-            output.setValue(output.getValue() + e.data);
+            output.setValue(output.getValue() + atob(e.data));
             output.gotoLine(output.session.getLength());
         };
-        var lang = document.getElementById("languages").value;
-        var code =  editor.getValue()
+        var env = document.getElementById("envs").value;
+        var code = editor.getValue()
         socket.onopen = function (e) {
             socket.send(JSON.stringify({
-                lang: lang,
+                env: env,
                 code: code
             }));
         }
@@ -93,9 +93,9 @@
         output.setValue("")
     }
     function changeLanguage() {
-        var lang = document.getElementById("languages").value;
-        for (let l of languages) {
-            if (l.id == lang){
+        var env = document.getElementById("envs").value;
+        for (let l of envs) {
+            if (l.id == env){
                 editor.session.setMode("ace/mode/"+l.mode)
                 var samples = document.getElementById("samples");
                 while (samples.firstChild) {
@@ -110,15 +110,15 @@
         }
     }
     function changeSample() {
-        var lang = document.getElementById("languages").value;
+        var env = document.getElementById("envs").value;
         var sample = document.getElementById("samples").value;
-        var url = window.location.href + "sample/?lang="+lang+"&file="+sample;
+        var url = window.location.href + "data/?env="+env+"&file="+sample;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 ) {
-                if ( xhr.status === 200) {
-                    editor.setValue(xhr.responseText);
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    editor.setValue(atob(xhr.responseText));
                     editor.gotoLine(1);
                 } else {
                     output.setValue("Error: " + xhr.responseText);
@@ -131,7 +131,7 @@
     var toolbar = document.getElementById("toolbar");
     buildDom(["button", { onclick: run }, "Run"], toolbar, refs);
     buildDom(["select", {
-                id: "languages",
+                id: "envs",
                 onchange: changeLanguage
             },
         ], toolbar, refs);
@@ -143,18 +143,18 @@
     buildDom(["div", { id: "drag" }], document.getElementById("output"), refs);
 
     (function(){
-        var url = window.location.href + "languages/";
+        var url = window.location.href + "envs/";
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 ) {
                 if ( xhr.status === 200) {
-                    var lang = document.getElementById("languages");
-                    languages = JSON.parse(xhr.responseText)
-                    for (let l of languages) {
-                        buildDom(["option", { value: l.id }, l.name ], lang, refs)
+                    var env = document.getElementById("envs");
+                    envs = JSON.parse(xhr.responseText)
+                    for (let l of envs) {
+                        buildDom(["option", { value: l.id }, l.name ], env, refs)
                     }
-                    lang.onchange()
+                    env.onchange()
                 } else {
                     document.getElementById("output").textContent = "Error: " + xhr.responseText;
                 }

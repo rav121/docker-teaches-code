@@ -8,14 +8,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/dtc:/tmp/dtc
   cpp:
-    build: lang/cpp
+    build: envs/cpp
     image: dtc-cpp
   dockerfile:
-    build: lang/dockerfile
+    build: envs/dockerfile
     image: dtc-dockerfile
   golang:
-    build: lang/golang
+    build: envs/golang
     image: dtc-golang
   python:
-    build: lang/python
+    build: envs/python
     image: dtc-python

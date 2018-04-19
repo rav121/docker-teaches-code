@@ -9,6 +9,11 @@
         {
             "name": "Fibonacci",
             "file": "fibonacci.go"
+        },
+        {
+            "name": "Word count",
+            "file": "word_count.go",
+            "input": "ipsum.txt"
         }
     ]
 }
