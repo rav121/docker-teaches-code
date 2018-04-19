@@ -1,15 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
 func main() {
@@ -93,29 +96,34 @@ type request struct {
 	Code string
 }
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
 func runHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	data, err := ioutil.ReadAll(r.Body)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Println(err)
+		return
+	}
+	defer conn.Close()
+	_, data, err := conn.ReadMessage()
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	req := request{}
 	err = json.Unmarshal(data, &req)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Println(err)
 		return
 	}
-	s, err := runCode(req)
+	err = runCode(req, conn)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
+		fmt.Println(err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, s)
 }
 
 func findLanguage(language string) (lang, error) {
@@ -127,28 +135,91 @@ func findLanguage(language string) (lang, error) {
 	return lang{}, fmt.Errorf("invalid language '%s'", language)
 }
 
-func runCode(req request) (string, error) {
+func runCode(req request, conn *websocket.Conn) error {
 	lang, err := findLanguage(req.Lang)
 	if err != nil {
-		return "", err
+		return err
 	}
 	dir, err := ioutil.TempDir("/tmp/dtc", "dtc-"+req.Lang+"-")
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer os.RemoveAll(dir)
 	err = ioutil.WriteFile(filepath.Join(dir, lang.File), []byte(req.Code), 0666)
 	if err != nil {
-		return "", err
+		return err
 	}
 	cmd := exec.Command("docker", "run", "--rm",
 		"-v", "/var/run/docker.sock:/var/run/docker.sock",
 		"-v", dir+":/dtc", "dtc-"+req.Lang)
-	output := bytes.Buffer{}
-	cmd.Stderr = &output
-	cmd.Stdout = &output
-	cmd.Run()
-	return output.String(), nil
+	outp, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	errp, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	send := make(chan []byte)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		if err := stream(send, outp); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if err := stream(send, errp); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	go flush(send, conn)
+	err = cmd.Wait()
+	wg.Wait()
+	close(send)
+	return err
+}
+
+func stream(send chan<- []byte, r io.Reader) error {
+	buf := make([]byte, 1024)
+	for {
+		n, err := r.Read(buf)
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		send <- buf[:n]
+	}
+}
+
+func flush(send <-chan []byte, conn *websocket.Conn) {
+	for {
+		select {
+		case buf, ok := <-send:
+			if !ok {
+				return
+			}
+			w, err := conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			defer w.Close()
+			_, err = w.Write(buf)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+	}
 }
 
 func sampleHandler(w http.ResponseWriter, r *http.Request) {

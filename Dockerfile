@@ -1,5 +1,6 @@
 FROM golang:1.10 AS gobuilder
-COPY *.go .
+WORKDIR /go/src/github.com/silvin-lubecki/docker-teaches-code
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /backend
 
 FROM docker:dind

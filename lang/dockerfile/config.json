@@ -19,7 +19,7 @@
             "file": "dind.Dockerfile"
         },
         {
-            "name": "Build Docker Teaches Code",
+            "name": "Build and run Docker Teaches Code",
             "file": "dtc.Dockerfile"
         }
     ]

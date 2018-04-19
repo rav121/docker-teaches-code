@@ -62,28 +62,34 @@
         "readOnly": true,
         "showPrintMargin": false,
     });
-    var languages
+    var languages;
     var refs = {};
 
     function run() {
-        var lang = document.getElementById("languages").value;
-        var url = window.location.href + "run/";
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", url, true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 ) {
-                if (xhr.status === 200) {
-                    output.setValue(xhr.responseText);
-                    output.gotoLine(output.session.getLength());
-                } else {
-                    output.setValue("Error: " + xhr.responseText);
-                }
-            }
+        var loc = window.location, uri;
+        if (loc.protocol === "https:") {
+            uri = "wss:";
+        } else {
+            uri = "ws:";
+        }
+        uri += "//" + loc.host;
+        uri += loc.pathname + "run/";
+        var socket = new WebSocket(uri);
+        socket.onmessage = function (e) {
+            output.setValue(output.getValue() + e.data);
+            output.gotoLine(output.session.getLength());
         };
-        xhr.send(JSON.stringify({
-            lang: lang,
-            code: editor.getValue()
-        }));
+        var lang = document.getElementById("languages").value;
+        var code =  editor.getValue()
+        socket.onopen = function (e) {
+            socket.send(JSON.stringify({
+                lang: lang,
+                code: code
+            }));
+        }
+        socket.onerror = function (e) {
+            output.setValue(e.message)
+        }
         output.setValue("")
     }
     function changeLanguage() {
@@ -113,6 +119,7 @@
             if (xhr.readyState === 4 ) {
                 if ( xhr.status === 200) {
                     editor.setValue(xhr.responseText);
+                    editor.gotoLine(1);
                 } else {
                     output.setValue("Error: " + xhr.responseText);
                 }
