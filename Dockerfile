@@ -8,4 +8,4 @@ COPY lang lang
 COPY --from=gobuilder /backend /
 
 EXPOSE 8080
-CMD ["/backend"]
+CMD /backend

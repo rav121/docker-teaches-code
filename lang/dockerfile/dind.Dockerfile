@@ -1,2 +1,2 @@
 FROM docker:dind
-CMD docker run hello-world
+CMD docker run --rm hello-world

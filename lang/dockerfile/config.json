@@ -11,12 +11,16 @@
             "file": "whale_say.Dockerfile"
         },
         {
-            "name": "Curl",
+            "name": "Docker logo to ASCII",
             "file": "curl.Dockerfile"
         },
         {
             "name": "Docker in Docker",
             "file": "dind.Dockerfile"
+        },
+        {
+            "name": "Build Docker Teaches Code",
+            "file": "dtc.Dockerfile"
         }
     ]
 }
