@@ -1,9 +1,10 @@
 package main
 
 import (
-	"os"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
 // Read text from stdin, count the number of words and write the result
@@ -15,5 +16,5 @@ func main() {
 		os.Exit(1)
 	}
 	strings := strings.Fields(string(buffer))
-	fmt.Println(len(strings)
+	fmt.Println(len(strings))
 }

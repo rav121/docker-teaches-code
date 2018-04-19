@@ -20,10 +20,17 @@
         right: 0;
         height: 38px;
     }
-    #editor { 
+    #editor {
         position: absolute;
         top: 38px;
         left: 0;
+        right: 0;
+        bottom: 200px;
+    }
+    #input {
+        position: absolute;
+        top: 38px;
+        left: 50%;
         right: 0;
         bottom: 200px;
     }
@@ -49,6 +56,7 @@
     <div id="container">
         <div id="toolbar"></div>
         <div id="editor"></div>
+        <div id="input"></div>
         <div id="output"></div>
     </div>
 
@@ -56,6 +64,12 @@
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
+    var input = ace.edit("input");
+    input.setOptions({
+        "autoScrollEditorIntoView": false,
+        "readOnly": true,
+        "showPrintMargin": false,
+    });
     var output = ace.edit("output");
     output.setOptions({
         "autoScrollEditorIntoView": false,
@@ -81,10 +95,12 @@
         };
         var env = document.getElementById("envs").value;
         var code = editor.getValue()
+        var inpt = input.getValue()
         socket.onopen = function (e) {
             socket.send(JSON.stringify({
                 env: env,
-                code: code
+                code: code,
+                input: btoa(inpt)
             }));
         }
         socket.onerror = function (e) {
@@ -94,14 +110,14 @@
     }
     function changeLanguage() {
         var env = document.getElementById("envs").value;
-        for (let l of envs) {
-            if (l.id == env){
-                editor.session.setMode("ace/mode/"+l.mode)
+        for (let e of envs) {
+            if (e.id == env) {
+                editor.session.setMode("ace/mode/"+e.mode)
                 var samples = document.getElementById("samples");
                 while (samples.firstChild) {
                     samples.removeChild(samples.firstChild);
                 }
-                for (let s of l.samples) {
+                for (let s of e.samples) {
                     buildDom(["option", { value: s.file }, s.name ], samples, refs)
                 }
                 samples.onchange()
@@ -110,6 +126,11 @@
         }
     }
     function changeSample() {
+        getCode()
+        getInput()
+        output.setValue("")
+    }
+    function getCode() {
         var env = document.getElementById("envs").value;
         var sample = document.getElementById("samples").value;
         var url = window.location.href + "data/?env="+env+"&file="+sample;
@@ -126,7 +147,45 @@
             }
         };
         xhr.send();
-        output.setValue("")
+    }
+    function getInput() {
+        var env = document.getElementById("envs").value;
+        var sample = document.getElementById("samples").value;
+        var inputNode = document.getElementById("input");
+        var editorNode = document.getElementById("editor");
+        if (inputNode) {
+            // input.clear()
+            inputNode.style.display = 'none';
+            editorNode.style.right = '0';
+        }
+        for (let e of envs) {
+            if (e.id == env) {
+                for (let s of e.samples) {
+                    if (s.file == sample) {
+                        if (s.input == "") {
+                            return
+                        }
+                        var url = window.location.href + "data/?env="+env+"&file="+s.input;
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("GET", url, true);
+                        xhr.onreadystatechange = function () {
+                            if (xhr.readyState === 4) {
+                                if (xhr.status === 200) {
+                                    inputNode.style.display = 'block'
+                                    inputNode.style.left = '50%'
+                                    editorNode.style.right = '50%'
+                                    input.setValue(atob(xhr.responseText));
+                                    input.gotoLine(1);
+                                } else {
+                                    output.setValue("Error: " + xhr.responseText);
+                                }
+                            }
+                        };
+                        xhr.send();
+                    }
+                }
+            }
+        }
     }
     var toolbar = document.getElementById("toolbar");
     buildDom(["button", { onclick: run }, "Run"], toolbar, refs);
@@ -151,8 +210,8 @@
                 if ( xhr.status === 200) {
                     var env = document.getElementById("envs");
                     envs = JSON.parse(xhr.responseText)
-                    for (let l of envs) {
-                        buildDom(["option", { value: l.id }, l.name ], env, refs)
+                    for (let e of envs) {
+                        buildDom(["option", { value: e.id }, e.name ], env, refs)
                     }
                     env.onchange()
                 } else {
@@ -163,49 +222,49 @@
         xhr.send();
     })();
 
-function buildDom(arr, parent, refs) {
-    if (typeof arr == "string" && arr) {
-        var txt = document.createTextNode(arr);
-        if (parent)
-            parent.appendChild(txt);
-        return txt;
-    }
-    
-    if (!Array.isArray(arr))
-        return arr;
-    if (typeof arr[0] != "string" || !arr[0]) {
-        var els = [];
-        for (var i = 0; i < arr.length; i++) {
-            var ch = buildDom(arr[i], parent, refs);
-            ch && els.push(ch);
+    function buildDom(arr, parent, refs) {
+        if (typeof arr == "string" && arr) {
+            var txt = document.createTextNode(arr);
+            if (parent)
+                parent.appendChild(txt);
+            return txt;
         }
-        return els;
-    }
-    
-    var el = document.createElement(arr[0]);
-    var options = arr[1];
-    var childIndex = 1;
-    if (options && typeof options == "object" && !Array.isArray(options)) {
-        childIndex = 2;
-        Object.keys(options).forEach(function(n) {
-            var val = options[n];
-            if (n === "class") {
-                el.className = Array.isArray(val) ? val.join(" ") : val;
-            } else if (typeof val == "function") {
-                el[n] = val;
-            } else if (n === "ref") {
-                if (refs) refs[val] = el;
-            } else {
-                el.setAttribute(n, val);
+
+        if (!Array.isArray(arr))
+            return arr;
+        if (typeof arr[0] != "string" || !arr[0]) {
+            var els = [];
+            for (var i = 0; i < arr.length; i++) {
+                var ch = buildDom(arr[i], parent, refs);
+                ch && els.push(ch);
             }
-        });
-    }
-    for (var i = childIndex; i < arr.length; i++)
-        buildDom(arr[i], el, refs);
-    if (parent)
-        parent.appendChild(el);
-    return el;
-};
+            return els;
+        }
+
+        var el = document.createElement(arr[0]);
+        var options = arr[1];
+        var childIndex = 1;
+        if (options && typeof options == "object" && !Array.isArray(options)) {
+            childIndex = 2;
+            Object.keys(options).forEach(function(n) {
+                var val = options[n];
+                if (n === "class") {
+                    el.className = Array.isArray(val) ? val.join(" ") : val;
+                } else if (typeof val == "function") {
+                    el[n] = val;
+                } else if (n === "ref") {
+                    if (refs) refs[val] = el;
+                } else {
+                    el.setAttribute(n, val);
+                }
+            });
+        }
+        for (var i = childIndex; i < arr.length; i++)
+            buildDom(arr[i], el, refs);
+        if (parent)
+            parent.appendChild(el);
+        return el;
+    };
 
     (function() {
         var container = document.getElementById("container"),

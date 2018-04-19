@@ -144,7 +144,7 @@ func runCode(req request, conn *websocket.Conn) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("docker", "run", "--rm",
+	cmd := exec.Command("docker", "run", "--rm", "-i",
 		"-v", "/var/run/docker.sock:/var/run/docker.sock",
 		"-v", dir+":/dtc", "dtc-"+req.Env)
 	outp, err := cmd.StdoutPipe()
@@ -164,11 +164,11 @@ func runCode(req request, conn *websocket.Conn) error {
 		if err != nil {
 			return err
 		}
-		go func() {
-			if _, err = inp.Write(b); err != nil {
-				fmt.Println(err)
-			}
-		}()
+		_, err = inp.Write(b)
+		if err != nil {
+			fmt.Println(err)
+		}
+		inp.Close()
 	}
 	send := make(chan []byte)
 	wg := sync.WaitGroup{}
