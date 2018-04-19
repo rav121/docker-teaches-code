@@ -13,6 +13,10 @@
         {
             "name": "Curl",
             "file": "curl.Dockerfile"
+        },
+        {
+            "name": "Docker in Docker",
+            "file": "dind.Dockerfile"
         }
     ]
 }
